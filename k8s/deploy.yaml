@@ -17,28 +17,30 @@ spec:
       containers:
         - name: app
           image: auto-scale-ai:local   # built and loaded into minikube
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           ports:
             - containerPort: 8000
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: 8000
             initialDelaySeconds: 3
-            periodSeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
           resources:               # Required for HPA
             requests:
               cpu: "150m"
-              memory: "128Mi"
-            limits:
-              cpu: "300m"
               memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 
 ---
 apiVersion: v1
