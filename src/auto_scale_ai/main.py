@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 import asyncio
 import time, os
+
+from auto_scale_ai.server import MCPServer
 
 app = FastAPI()
 START_TIME = time.time()
@@ -13,20 +15,20 @@ class Echo(BaseModel):
 async def health():
     return {"status": "ok"}
 
-@app.get("/cpu-intensive")
-async def cpu_intensive(sleep_seconds: float = 2.0):
-    """Sleep-based endpoint for testing auto-scaling"""
-    await asyncio.sleep(sleep_seconds)
-    return {"sleep_seconds": sleep_seconds}
+mcp_server = MCPServer()
 
-@app.get("/agent1")
-async def agent1():
-    pass
+@app.post("/agent")
+async def agent(request: Request):
+    request_data = await request.json()
+    method = request_data['method']
+    params = request_data['params']
+    bearer_token = request.headers.get('Authorization')
 
-@app.get("/agent2")
-async def agent2():
-    pass
+    result = mcp_server.handle_request(method, request_data, bearer_token)
 
-@app.get("/agent3")
-async def agent3():
-    pass
+    # Send successful response
+    return {
+        "jsonrpc": "2.0",
+        "id": request_data.get("id"),
+        "result": result
+    }
